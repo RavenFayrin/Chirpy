@@ -6,12 +6,10 @@ import (
 	"net/http"
 )
 
-
-
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Password string `json:"password"`
-		Email string `json:"email"`
+		Email    string `json:"email"`
 	}
 	type response struct {
 		User
@@ -32,21 +30,17 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	match, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
-	if err != nil {
+	if err != nil || !match {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
 		return
 	}
-	if match == false {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
-		return
-	} else {
-		respondWithJSON(w, http.StatusOK, response{
+
+	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:        user.ID,
+			Email:     user.Email,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
-			Email:     user.Email,
 		},
 	})
-	}	
 }
