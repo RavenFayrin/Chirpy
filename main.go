@@ -33,8 +33,8 @@ func main() {
 		log.Fatal("PLATFORM must be set")
 	}
 	jwtSecret := os.Getenv("JWT_SECRET")
-	if platform == "" {
-		log.Fatal("JWT_SECRET must be set")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
