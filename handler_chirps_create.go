@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Chirpy/internal/auth"
 	"Chirpy/internal/database"
 	"encoding/json"
 	"errors"
@@ -32,6 +33,20 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
 	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+
+	params.UserID = userId
 
 	cleaned, err := validateChirp(params.Body)
 	if err != nil {

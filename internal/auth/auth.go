@@ -3,7 +3,9 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
+	"strings"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
@@ -81,4 +83,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 	return id, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	tokenString := headers.Get("Authorization")
+	if tokenString == ""{
+		return "", fmt.Errorf("Blank Token String")
+	}
+	tokenString, match := strings.CutPrefix(tokenString, "Bearer ")
+	if !match{
+		return "", fmt.Errorf("Couldn't remove prefix")
+	}
+	return tokenString, nil
 }
