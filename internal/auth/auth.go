@@ -104,11 +104,10 @@ func GetBearerToken(headers http.Header) (string, error) {
 	return splitAuth[1], nil
 }
 
+// MakeRefreshToken makes a random 256 bit token
+// encoded in hex
 func MakeRefreshToken() string {
-	b := make([]byte,32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return ""
-	}
-	return hex.EncodeToString(b)
+	token := make([]byte, 32)
+	rand.Read(token)
+	return hex.EncodeToString(token)
 }
