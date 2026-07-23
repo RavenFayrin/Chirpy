@@ -18,13 +18,13 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ApiKey, err := auth.GetAPIKey(r.Header)
+	apiKey, err := auth.GetAPIKey(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't find API Key", err)
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find api key", err)
 		return
 	}
-	if ApiKey != cfg.polkaKey {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't validate API Key", err)
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "API key is invalid", err)
 		return
 	}
 
