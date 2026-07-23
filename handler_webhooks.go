@@ -1,22 +1,20 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerUpgradeMembership(w http.ResponseWriter, r *http.Request) {
-	type webhookData struct {
-    UserID uuid.UUID `json:"user_id"`
-	}
+func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Event string `json:"event"`
-		Data  webhookData `json:"data"`
-	}
-	type response struct {
-		User
+		Data  struct {
+			UserID uuid.UUID `json:"user_id"`
+		}
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -32,9 +30,13 @@ func (cfg *apiConfig) handlerUpgradeMembership(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = cfg.db.UpgradeMembershipById(r.Context(), params.Data.UserID)
+	_, err = cfg.db.UpgradeToChirpyRed(r.Context(), params.Data.UserID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Couldn't upgrade membership", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "Couldn't find user", err)
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Couldn't update user", err)
 		return
 	}
 
