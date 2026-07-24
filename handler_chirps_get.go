@@ -3,6 +3,7 @@ package main
 import (
 	"Chirpy/internal/database"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -42,8 +43,14 @@ func authorIDFromRequest(r *http.Request) (uuid.UUID, error) {
 	return authorID, nil
 }
 
+func sortFromRequest(r *http.Request) (string) {
+	sortStyle := r.URL.Query().Get("sort")
+	return sortStyle
+}
+
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 	authorID, err := authorIDFromRequest(r)
+	sortStyle := sortFromRequest(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid author ID", err)
 		return
@@ -61,6 +68,12 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if sortStyle == "desc"{
+		sort.Slice(dbChirps, func(i, j int) bool {return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt)})
+	}else{
+		sort.Slice(dbChirps, func(i, j int) bool {return dbChirps[i].CreatedAt.Before(dbChirps[j].CreatedAt)})
+	}
+	
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, Chirp{
