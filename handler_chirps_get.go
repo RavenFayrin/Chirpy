@@ -43,21 +43,14 @@ func authorIDFromRequest(r *http.Request) (uuid.UUID, error) {
 	return authorID, nil
 }
 
-func sortFromRequest(r *http.Request) (string) {
-	sortStyle := r.URL.Query().Get("sort")
-	return sortStyle
-}
-
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 	authorID, err := authorIDFromRequest(r)
-	sortStyle := sortFromRequest(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid author ID", err)
 		return
 	}
 
 	var dbChirps []database.Chirp
-
 	if authorID != uuid.Nil {
 		dbChirps, err = cfg.db.GetChirpsByAuthor(r.Context(), authorID)
 	} else {
@@ -68,12 +61,12 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if sortStyle == "desc"{
-		sort.Slice(dbChirps, func(i, j int) bool {return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt)})
-	}else{
-		sort.Slice(dbChirps, func(i, j int) bool {return dbChirps[i].CreatedAt.Before(dbChirps[j].CreatedAt)})
+	sortDirection := "asc"
+	sortDirectionParam := r.URL.Query().Get("sort")
+	if sortDirectionParam == "desc" {
+		sortDirection = "desc"
 	}
-	
+
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, Chirp{
@@ -84,6 +77,13 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 			Body:      dbChirp.Body,
 		})
 	}
+
+	sort.Slice(chirps, func(i, j int) bool {
+		if sortDirection == "desc" {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		}
+		return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+	})
 
 	respondWithJSON(w, http.StatusOK, chirps)
 }
