@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Chirpy/internal/database"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -30,11 +31,29 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.db.GetChirps(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
-		return
+	var dbChirps []database.Chirp
+	var err error
+
+	authorIDString := r.URL.Query().Get("author_id")
+	if authorIDString != ""{
+		authorID, err := uuid.Parse(authorIDString)
+		if err != nil{
+			respondWithError(w, http.StatusInternalServerError, "Couldn't parse uuid", err)
+			return
+		}
+		dbChirps, err = cfg.db.GetChirpsByAuthor(r.Context(), authorID)
+		if err != nil{
+			respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
+			return
+		}
+	} else {
+		dbChirps, err = cfg.db.GetChirps(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps", err)
+			return
+		}
 	}
+	
 
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
